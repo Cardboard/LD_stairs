@@ -43,7 +43,9 @@ class Game:
         self.draw(display)
     def draw(self, display):
         display.fill(self.color_bg)
-        self.stairs.steps.draw(display)
+        #self.stairs.steps.draw(display)
+        for step in self.stairs.steps:
+            step.draw(self.display)
         self.player.left.draw(display)
         self.player.right.draw(display)
         pygame.display.update()
@@ -89,18 +91,20 @@ class Foot:
     def onStep(self, stairs):
         for step in stairs:
             pass
-            #CHECK IF FOOT ON STEP
+            #CHECK IF FOOT ON STEP AND PAST PART WHERE FIRST STEPS ARE BEING GENERATED
 
 class Stairs:
     def __init__(self, display):
         self.display = display
         self.steps = pygame.sprite.Group()
+        self.lastx = display.get_width()/2
+        self.gap = 0#50
     def generateStep(self, left_y, right_y):
         print('NEW STEP')
-        #FIGURE OUT WHERE TO PLACE EACH FOOT
-        #BASED ON FEET Y POSITIONS
-        #EACH STEP IS A SPRITE
-        self.steps.add(Step(100))
+        # RANDOM X COORD THAT IS CLOSE TO LAST X COORD
+        newx = random.randint(self.lastx-self.gap, self.lastx+self.gap)
+        self.steps.add(Step(newx))
+        self.lastx = newx
 
 class Step(pygame.sprite.Sprite):
     def __init__(self, x):
@@ -114,23 +118,31 @@ class Step(pygame.sprite.Sprite):
         self.image = pygame.Surface( (self.width, self.height) )
         self.image.fill( (220, 220, 220) )
         self.rect = self.image.get_rect()
+    def draw(self, display):
+        pygame.draw.rect(display, (220, 220, 220), self.rect)
     def update(self, display, left, right):
         self.x += self.xspeed
         self.y += self.yspeed
         self.rect.top = self.y
         self.rect.left = self.x
-        # UPDATE ACCORDING TO PLAYER FEET POSITIONS
+        # UPDATE DEPENDING ON LEFT AND RIGHT FEET
         if left.moving == True:
-            self.xspeed = (display.get_height() - left.y)**2
+            coeff = 1
         elif right.moving == True:
-            pass
+            coeff = -1
         else:
-            self.xspeed = 0
-        self.yspeed = abs(self.y) / 100
-        self.yspeed = self.clamp(self.yspeed, 0.5, 10)
-        print(self.yspeed)
+            coeff = 0
+        self.xspeed = abs(self.y) / 100
+        self.xspeed = coeff * self.clamp(self.xspeed, 0.5, 10)
+        self.yspeed = abs(self.y**2) / 50000
+        self.yspeed = self.clamp(self.yspeed, 0.3, 10)
+        self.rect = pygame.Rect(self.x, self.y, self.width*self.yspeed, self.height* self.clamp(self.y/500, 0.1, 3) ) #self.rect.inflate(self.yspeed, self.yspeed/3)
+        self.rect.move_ip(-self.yspeed*50, 0)
         # SCALE DEPENDING ON Y POSITION
         # DELETE IF OFF SCREEN
+        if self.y > display.get_height():
+            self.kill()
+            print("STEP KILLED")
     def clamp(self, val, low, high):
         if val < low:
             return low
