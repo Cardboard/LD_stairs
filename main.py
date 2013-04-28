@@ -19,7 +19,7 @@ font = pygame.font.Font(None, 36)
 state = 'intro'
 
 intro = Intro(font)
-game = Game(font)
+game = Game(display, font)
 #endgame = Endgame(font)
 
 
