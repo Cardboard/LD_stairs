@@ -4,12 +4,19 @@ import pygame
 import random
 
 class Game:
-    def __init__(self, display, font):
+    def __init__(self, display, font, serious=False):
+        print("GAME!")
         self.color_bg = (16, 16, 16)
         self.display = display
         self.font = font
         self.player = Player(display)
         self.stairs = Stairs(display)
+        if serious == True:
+            filename = 'serious.png'
+        else:
+            filename = 'potato.png'
+        self.potato = Potato(display,filename)
+        self.state = 'game'
         self.timer = timeit.default_timer()
         self.timer_interval = 0.75
         self.start_time = timeit.default_timer()
@@ -18,6 +25,7 @@ class Game:
         text = "DON'T TRIP. DON'T FALL OFF."
         self.message = [self.font.render(text, 1, (220,220,220)), self.font.size(text)[0], self.start_time + 6]
     def reset(self):
+        self.state = 'game'
         self.player = Player(self.display)
         text = "DON'T TRIP. DON'T FALL OFF."
         self.start_time = timeit.default_timer()
@@ -25,10 +33,6 @@ class Game:
         self.game_time = self.start_time + 14
         self.endgame_time = self.start_time + 60
         self.stairs.reset()
-    def isOver(self):
-        if timeit.default_timer() > self.endgame_time:
-            print("YOU WIN")
-            return True
     def gameOver(self):
         if self.player.dead == True:
             print("GAMEOVER")
@@ -53,20 +57,24 @@ class Game:
                     self.player.right.moving = False
                 if event.key == pygame.K_LEFT:
                     self.player.left.moving = False
-        if timeit.default_timer() > (self.timer + self.timer_interval):
-            self.stairs.generateStep(self.player.left.y, self.player.right.y)
-            self.timer = timeit.default_timer()
+        if timeit.default_timer() > self.endgame_time:
+            self.state = 'endgame'
+        if self.state == 'game' and timeit.default_timer() > (self.timer + self.timer_interval):
+                self.stairs.generateStep(self.player.left.y, self.player.right.y)
+                self.timer = timeit.default_timer()
         self.stairs.killSteps()
         for step in self.stairs.steps:
             step.update(self.display, self.player.left, self.player.right)
         # check if player hits a step or falls off staircase
-        if timeit.default_timer() > self.game_time:
+        if timeit.default_timer() > self.game_time and self.state == 'game':
             self.player.checkFeet(self.stairs)
         # play player death animation if player is dead
         self.player.die()
         self.player.right.move()
         self.player.left.move()
         self.draw(display)
+        if self.state == 'endgame':
+            self.potato.move()
     def draw(self, display):
         display.fill(self.color_bg)
         pygame.draw.rect(self.display, (0,0,255), self.player.safezone)
@@ -79,6 +87,8 @@ class Game:
         except:
             pass
         self.draw_message()
+        if self.state == 'endgame':
+            self.potato.draw(self.display)
         pygame.display.update()
     def draw_message(self):
         if timeit.default_timer() < self.message[2]:
@@ -231,10 +241,47 @@ class Step(pygame.sprite.Sprite):
         # SCALE DEPENDING ON Y POSITION
         self.rect = pygame.Rect(self.x, self.y, self.width*self.yspeed, self.height* self.clamp(self.y/500, 0.1, 3) ) #self.rect.inflate(self.yspeed, self.yspeed/3)
         self.rect.move_ip(-self.yspeed*50, 0)
-        # DELETE IF OFF SCREEN
-        #if self.y > display.get_height():
-        #    self.kill()
-        #    print("STEP KILLED")
+    def clamp(self, val, low, high):
+        if val < low:
+            return low
+        elif val > high:
+            return high
+        else:
+            return val
+
+class Potato(pygame.sprite.Sprite):
+    def __init__(self, display, filename):
+        self.display = display
+        self.display_width = self.display.get_width()
+        self.filename = filename
+        self.image = pygame.image.load(self.filename).convert_alpha()
+        self.rect = self.image.get_rect()
+        self.y = -100
+        self.rect.y = self.y
+        self.rect.x = display.get_width()/2 - self.rect.width/2
+        self.max_y = 150
+        self.speed = 0.3
+    def move(self):
+        if self.rect.y <= self.max_y:
+            if self.y < 125:
+                self.speed = 0.3
+            else:
+                self.speed = self.clamp((self.y-125)**2/1000, 0.3, 1)
+            self.y += self.speed
+            if self.y > 50:
+                width = int(self.y)
+                height = int(self.y)
+            else:
+                width = 50
+                height = 50
+            self.rect = pygame.Rect((self.display_width/2-width/2), self.y, width, height)
+            self.image = pygame.transform.scale(pygame.image.load(self.filename).convert_alpha(), (width, height))
+    def draw(self, display):
+        pygame.draw.rect(display, (255,0,255), self.rect)
+        display.blit(self.image, self.rect)
+    def ready(self):
+        if self.rect.y == self.max_y:
+            return True
     def clamp(self, val, low, high):
         if val < low:
             return low

@@ -29,7 +29,6 @@ ad infinitum
 
     def update(self, ticks):
         self.timer -= ticks
-        print(self.timer)
         if self.timer < 0:
             self.text = self.font.render("created by cardboard", 1, self.color_text)
         if self.timer < -(60 * 100):

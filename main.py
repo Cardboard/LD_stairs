@@ -18,7 +18,11 @@ font = pygame.font.Font(None, 36)
 state = 'intro'
 
 intro = Intro(font)
-game = Game(display, font)
+if '-serious' in sys.argv:
+    mode = True
+else:
+    mode = False
+game = Game(display, font, mode)
 
 text1 = "GAME OVER"
 text2 = "PRESS SPACE TO TRY AGAIN"
@@ -34,8 +38,6 @@ if __name__ == '__main__':
                 state = 'game'
         if state == 'game':
             game.run(display, ticks)
-            if game.isOver():
-                state = 'endgame'
             if game.gameOver():
                 state = 'gameover'
         if state == 'gameover':
