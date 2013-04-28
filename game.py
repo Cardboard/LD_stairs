@@ -1,3 +1,5 @@
+import sys
+import timeit
 import pygame
 import random
 
@@ -7,9 +9,14 @@ class Game:
         self.display = display
         self.player = Player(display)
         self.stairs = Stairs(display)
-        self.timer = 0
-    def run(self, display, events, keys, ticks):
-        for event in events:
+        self.timer = timeit.default_timer()
+        self.timer_interval = 0.75
+    def run(self, display, keys, ticks):
+        pygame.event.pump()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+                pygame.quit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RIGHT:
                     if self.player.right.y == self.player.right.starting_y and self.player.left.y == self.player.left.starting_y:
@@ -26,16 +33,17 @@ class Game:
                 if event.key == pygame.K_LEFT:
                     self.player.left.moving = False
                     print('STOPPED STEPPING LEFT...')
+        if timeit.default_timer() > (self.timer + self.timer_interval):
+            self.stairs.generateStep(self.player.left.y, self.player.right.y)
+            self.timer = timeit.default_timer()
+        for step in self.stairs.steps:
+            step.update(self.display, self.player.left, self.player.right)
         self.player.right.move()
         self.player.left.move()
         self.draw(display)
-    def update(self, ticks):
-        self.timer += ticks
-        if self.timer > 1000: #! ADJUST IF NECESSARY
-            stairs.generateStep(self.player.left.y, self.player.right.y)
-            self.timer = 0
     def draw(self, display):
         display.fill(self.color_bg)
+        self.stairs.steps.draw(display)
         self.player.left.draw(display)
         self.player.right.draw(display)
         pygame.display.update()
@@ -62,7 +70,6 @@ class Foot:
         pygame.draw.rect(display, (234, 41, 214), self.rect)
     def move(self):
         if self.moving == True:
-            print(self.rect.y)
             self.y -= self.speed
             self.y = self.clamp(self.y, self.min_y, self.starting_y)
             self.rect.top = self.y
@@ -89,13 +96,45 @@ class Stairs:
         self.display = display
         self.steps = pygame.sprite.Group()
     def generateStep(self, left_y, right_y):
+        print('NEW STEP')
         #FIGURE OUT WHERE TO PLACE EACH FOOT
         #BASED ON FEET Y POSITIONS
         #EACH STEP IS A SPRITE
-        newStep = Step()
-        self.steps.add(newStep)
+        self.steps.add(Step(100))
 
 class Step(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, x):
+        pygame.sprite.Sprite.__init__(self)
+        self.x = x
+        self.y = -25
         self.width = 100
-        self.height = 50
+        self.height = 25
+        self.yspeed = 0
+        self.xspeed = 0
+        self.image = pygame.Surface( (self.width, self.height) )
+        self.image.fill( (220, 220, 220) )
+        self.rect = self.image.get_rect()
+    def update(self, display, left, right):
+        self.x += self.xspeed
+        self.y += self.yspeed
+        self.rect.top = self.y
+        self.rect.left = self.x
+        # UPDATE ACCORDING TO PLAYER FEET POSITIONS
+        if left.moving == True:
+            self.xspeed = (display.get_height() - left.y)**2
+        elif right.moving == True:
+            pass
+        else:
+            self.xspeed = 0
+        self.yspeed = abs(self.y) / 100
+        self.yspeed = self.clamp(self.yspeed, 0.5, 10)
+        print(self.yspeed)
+        # SCALE DEPENDING ON Y POSITION
+        # DELETE IF OFF SCREEN
+    def clamp(self, val, low, high):
+        if val < low:
+            return low
+        elif val > high:
+            return high
+        else:
+            return val
