@@ -35,7 +35,7 @@ ad infinitum
         if self.timer < -(60 * 100):
            self.finished = True
 
-    def run(self, display, keys, ticks):
+    def run(self, display, ticks):
         self.draw(display)
         self.update(ticks)
 

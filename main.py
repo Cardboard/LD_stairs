@@ -15,25 +15,41 @@ display = pygame.display.set_mode((width, height))
 pygame.display.set_caption("stairs")
 font = pygame.font.Font(None, 36)
 
-
 state = 'intro'
 
 intro = Intro(font)
 game = Game(display, font)
-#endgame = Endgame(font)
 
+text1 = "GAME OVER"
+text2 = "PRESS SPACE TO TRY AGAIN"
+gameoverMessage = [[font.render(text1, 1, (220,220,220)), font.size(text1)[0]],
+                    [font.render(text2, 1, (220,220,220)), font.size(text2)[0]]]
 
 if __name__ == '__main__':
     while True:
         ticks = pygame.time.get_ticks() - ticks
-        keys = pygame.key.get_pressed()
         if state == 'intro':
-            intro.run(display, keys, ticks)
+            intro.run(display, ticks)
             if intro.finished:
                 state = 'game'
         if state == 'game':
-            game.run(display, keys, ticks)
-        if state == 'endgame':
-            endgame.run(display, keys, ticks)
+            game.run(display, ticks)
+            if game.isOver():
+                state = 'endgame'
+            if game.gameOver():
+                state = 'gameover'
+        if state == 'gameover':
+            display.fill((16,16,16))
+            display.blit(gameoverMessage[0][0], (width/2-gameoverMessage[0][1]/2, 100))
+            display.blit(gameoverMessage[1][0], (width/2-gameoverMessage[1][1]/2, 110+font.get_height()))
+            pygame.display.update()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                    pygame.quit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                    game.reset()
+                    state = 'game'
+                    print("RESTARTING GAME...")
 
         clock.tick(fps)
