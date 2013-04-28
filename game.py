@@ -51,7 +51,7 @@ class Game:
                     if self.player.left.y == self.player.left.starting_y and self.player.right.y == self.player.right.starting_y: #self.player.right.moving == False:
                         self.player.left.moving = True
                 if event.key == pygame.K_DOWN:
-                    self.endgame_time = timeit.default_timer() + 1
+                    self.endgame_time = timeit.default_timer() + 10
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_RIGHT:
                     self.player.right.moving = False
@@ -59,14 +59,26 @@ class Game:
                     self.player.left.moving = False
         if timeit.default_timer() > self.endgame_time:
             self.state = 'endgame'
+            self.stairs.gap = 0
+            self.stairs.lastx = self.display.get_width()/2
+        if timeit.default_timer() > (self.game_time + 30):
+            self.stairs.gap = 100
         if self.state == 'game' and timeit.default_timer() > (self.timer + self.timer_interval):
+                self.stairs.generateStep(self.player.left.y, self.player.right.y)
+                self.timer = timeit.default_timer()
+        if self.state == 'endgame' and timeit.default_timer() < (self.endgame_time + 5):
+            if timeit.default_timer() > (self.timer + self.timer_interval):
                 self.stairs.generateStep(self.player.left.y, self.player.right.y)
                 self.timer = timeit.default_timer()
         self.stairs.killSteps()
         for step in self.stairs.steps:
-            step.update(self.display, self.player.left, self.player.right)
+            if timeit.default_timer() > self.endgame_time + 12:
+                step.update(self.display, self.player.left, self.player.right, True)
+            else:
+                step.update(self.display, self.player.left, self.player.right, False)
+
         # check if player hits a step or falls off staircase
-        if timeit.default_timer() > self.game_time and self.state == 'game':
+        if timeit.default_timer() > self.game_time:
             self.player.checkFeet(self.stairs)
         # play player death animation if player is dead
         self.player.die()
@@ -191,7 +203,7 @@ class Stairs:
         self.display = display
         self.steps = pygame.sprite.Group()
         self.lastx = display.get_width()/2
-        self.gap = 0#50
+        self.gap = 50
         self.killed_step = pygame.Rect(0,0,0,0)
     def generateStep(self, left_y, right_y):
         # RANDOM X COORD THAT IS CLOSE TO LAST X COORD
@@ -204,6 +216,8 @@ class Stairs:
                 self.killed_step = step.rect
                 step.kill()
     def reset(self):
+        self.lastx = self.display.get_width()/2
+        self.gap = 50
         for step in self.steps:
             step.kill()
 
@@ -222,15 +236,15 @@ class Step(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
     def draw(self, display):
         pygame.draw.rect(display, (220, 220, 220), self.rect)
-    def update(self, display, left, right):
+    def update(self, display, left, right, potato):
         self.x += self.xspeed
         self.y += self.yspeed
         self.rect.top = self.y
         self.rect.left = self.x
         # UPDATE DEPENDING ON LEFT AND RIGHT FEET
-        if left.moving == True:
+        if left.moving == True and potato == False:
             coeff = 1
-        elif right.moving == True:
+        elif right.moving == True and potato == False:
             coeff = -1
         else:
             coeff = 0
@@ -256,7 +270,7 @@ class Potato(pygame.sprite.Sprite):
         self.filename = filename
         self.image = pygame.image.load(self.filename).convert_alpha()
         self.rect = self.image.get_rect()
-        self.y = -100
+        self.y = -200
         self.rect.y = self.y
         self.rect.x = display.get_width()/2 - self.rect.width/2
         self.max_y = 150
