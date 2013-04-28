@@ -11,6 +11,8 @@ class Game:
         self.stairs = Stairs(display)
         self.timer = timeit.default_timer()
         self.timer_interval = 0.75
+        self.start_time = timeit.default_timer()
+        self.game_time = self.start_time + 14
     def run(self, display, keys, ticks):
         pygame.event.pump()
         for event in pygame.event.get():
@@ -38,6 +40,9 @@ class Game:
             self.timer = timeit.default_timer()
         for step in self.stairs.steps:
             step.update(self.display, self.player.left, self.player.right)
+        # check if player hits a step or falls off staircase
+        if timeit.default_timer() > self.game_time:
+            self.player.checkFeet(self.stairs)
         self.player.right.move()
         self.player.left.move()
         self.draw(display)
@@ -48,12 +53,23 @@ class Game:
             step.draw(self.display)
         self.player.left.draw(display)
         self.player.right.draw(display)
+        try:
+            pygame.draw.rect(self.display, (0,255,128), self.player.debugrect)
+        except:
+            pass
         pygame.display.update()
 
 class Player:
     def __init__(self, display):
+        self.display = display
         self.left = Foot(display, 250) #! ADJUST
         self.right = Foot(display, 500) #! ADJUST
+        self.debugrect = pygame.Rect(0,0,0,0)
+    def checkFeet(self, stairs):
+        for step in stairs.steps:
+            if self.left.rect.colliderect(step.rect) or self.right.rect.colliderect(step.rect):
+                if self.left.y == self.left.starting_y and self.right.y == self.right.starting_y:
+                    self.debugrect = self.left.rect.clip(step.rect)
 
 class Foot:
     def __init__(self, display, x):
@@ -88,10 +104,6 @@ class Foot:
             return high
         else:
             return val
-    def onStep(self, stairs):
-        for step in stairs:
-            pass
-            #CHECK IF FOOT ON STEP AND PAST PART WHERE FIRST STEPS ARE BEING GENERATED
 
 class Stairs:
     def __init__(self, display):
@@ -136,9 +148,9 @@ class Step(pygame.sprite.Sprite):
         self.xspeed = coeff * self.clamp(self.xspeed, 0.5, 10)
         self.yspeed = abs(self.y**2) / 50000
         self.yspeed = self.clamp(self.yspeed, 0.3, 10)
+        # SCALE DEPENDING ON Y POSITION
         self.rect = pygame.Rect(self.x, self.y, self.width*self.yspeed, self.height* self.clamp(self.y/500, 0.1, 3) ) #self.rect.inflate(self.yspeed, self.yspeed/3)
         self.rect.move_ip(-self.yspeed*50, 0)
-        # SCALE DEPENDING ON Y POSITION
         # DELETE IF OFF SCREEN
         if self.y > display.get_height():
             self.kill()
