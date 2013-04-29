@@ -93,7 +93,6 @@ class Game:
         self.draw(display)
         if self.state == 'endgame':
             self.potato.move()
-        print(self.endgame_time - timeit.default_timer())
         # SET UP MESSAGES ONCE POTATO HAS FINISHED MOVING
         if self.potato.ready() and self.potato.arrived == False:
             self.potato.arrived = True
