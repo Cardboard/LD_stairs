@@ -13,7 +13,11 @@ width = 800
 height = 600
 display = pygame.display.set_mode((width, height))
 pygame.display.set_caption("stairs")
-font = pygame.font.Font(None, 36)
+font = pygame.font.Font('trisk.fon', 10)
+music = 'song.it' # song created by autotracker.py
+pygame.mixer.init()
+pygame.mixer.music.load(music)
+pygame.mixer.music.play(-1)
 
 state = 'intro'
 
@@ -22,7 +26,7 @@ if '-serious' in sys.argv:
     mode = True
 else:
     mode = False
-game = Game(display, font, mode)
+#game = Game(display, font, mode)
 
 text1 = "GAME OVER"
 text2 = "PRESS SPACE TO TRY AGAIN"
@@ -35,6 +39,7 @@ if __name__ == '__main__':
         if state == 'intro':
             intro.run(display, ticks)
             if intro.finished:
+                game = Game(display, font, mode)
                 state = 'game'
         if state == 'game':
             game.run(display, ticks)

@@ -6,23 +6,21 @@ class Intro:
         self.color_bg = (16,16,16)
         self.color_text = (220,220,220)
         self.font = font
-        self.timer = 60 * 100  # in ticks
+        self.timer = 60 * 5000  # in ticks
         self.finished = False
         self.text = []
         text = '''
-                                                STAIRS
+                    S
+                R
+            I
+        A
+    T
+S
 
-                                        climb the
-                                    stairs by
-                                stepping
-                            with one
-                        foot, then
-                    the other,
-                then the
-            first foot
-        then the
-    second,
-ad infinitum
+
+
+
+CONTROLS: LEFT AND RIGHT
 '''.split('\n')
         for line in text:
             self.text.append(self.font.render(line, 1, self.color_text))
@@ -31,7 +29,7 @@ ad infinitum
         self.timer -= ticks
         if self.timer < 0:
             self.text = self.font.render("created by cardboard", 1, self.color_text)
-        if self.timer < -(60 * 100):
+        if self.timer < -(60 * 3000):
            self.finished = True
 
     def run(self, display, ticks):
@@ -42,7 +40,7 @@ ad infinitum
         display.fill(self.color_bg)
         if type(self.text) == list:
             for i in range(len(self.text)):
-                display.blit(self.text[i], (150, i * 38))
+                display.blit(self.text[i], (300, 100+ i * 20))
         else:
-            display.blit(self.text, (225,250))
+            display.blit(self.text, (310,400))
         pygame.display.update()
